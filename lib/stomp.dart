@@ -13,6 +13,7 @@ class StompClient {
   bool get connected => _handler?.connected ?? false;
 
   bool get isActive => _isActive;
+  late Stream<bool> isConnected;
 
   StompHandler? _handler;
   Timer? _reconnectTimer;
@@ -61,8 +62,8 @@ class StompClient {
           }
         },
       ),
-    )
-      ..start();
+    )..start();
+    isConnected = _handler!.connectionStream;
   }
 
   StompUnsubscribe subscribe({

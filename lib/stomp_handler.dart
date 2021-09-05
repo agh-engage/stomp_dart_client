@@ -47,7 +47,10 @@ class StompHandler {
   Timer? _heartbeatSender;
   Timer? _heartbeatReceiver;
 
+  final _connectionStreamController = StreamController<bool>();
+
   bool get connected => _connected;
+  Stream<bool> get connectionStream => _connectionStreamController.stream;
 
   void start() async {
     try {
@@ -230,6 +233,7 @@ class StompHandler {
 
   void _onConnectFrame(StompFrame frame) {
     _connected = true;
+    _connectionStreamController.add(true);
 
     if (frame.headers['version'] != '1.0') {
       _parser.escapeHeaders = true;
@@ -305,6 +309,7 @@ class StompHandler {
   }
 
   void _cleanUp() {
+    _connectionStreamController.add(false);
     _connected = false;
     _heartbeatSender?.cancel();
     _heartbeatReceiver?.cancel();
