@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:developer';
+import 'dart:math' hide log;
 import 'dart:typed_data';
 
 import 'package:stomp_dart_client/parser.dart';
@@ -59,7 +60,7 @@ class StompHandler {
       _connectToStomp();
     } catch (err) {
       _onError(err);
-      if (config.reconnectDelay.inMilliseconds == 0) {
+      if (!reconnectAutomaticly) {
         _cleanUp();
       } else {
         if (err is TimeoutException) {
@@ -73,6 +74,8 @@ class StompHandler {
       }
     }
   }
+
+  bool get reconnectAutomaticly => config.reconnectDelay.inMilliseconds != 0;
 
   void dispose() {
     if (connected) {
@@ -241,8 +244,7 @@ class StompHandler {
       _parser.escapeHeaders = false;
     }
 
-    if (frame.headers['version'] != '1.0' &&
-        frame.headers.containsKey('heart-beat')) {
+    if (frame.headers['version'] != '1.0' && frame.headers.containsKey('heart-beat')) {
       _setupHeartbeat(frame);
     }
 
@@ -298,9 +300,8 @@ class StompHandler {
       final ttl = max(config.heartbeatIncoming.inMilliseconds, serverOutgoing);
       _heartbeatReceiver?.cancel();
       _heartbeatReceiver = Timer.periodic(Duration(milliseconds: ttl), (_) {
-        final deltaMs = DateTime.now().millisecondsSinceEpoch -
-            _lastServerActivity.millisecondsSinceEpoch;
-        // The connection might be dead. Clean up.
+        final deltaMs = DateTime.now().millisecondsSinceEpoch - _lastServerActivity.millisecondsSinceEpoch;
+        log('The connection might be dead. Clean up.');
         if (deltaMs > (ttl * 2)) {
           _cleanUp();
         }
